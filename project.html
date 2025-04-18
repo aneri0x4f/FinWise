@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Currency Converter</title>
+</head>
+<body>
+    <h3>👤 User Access</h3>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Signup</button>
+    <button onclick="logout()">Logout</button>
+    <div id="authStatus"></div>
+    
+  <h2>Multi-Currency Converter</h2>
+  <div id="converter">
+    <input type="number" id="amount" placeholder="Enter amount" />
+    <select id="fromCurrency"></select>
+    <select id="toCurrency"></select>
+    <button id="convertBtn">Convert</button>
+    <div id="result"></div>
+    <div id="error" style="color:red;"></div>
+
+    <h2>💰 Your Total Balance</h2>
+<div id="totalBalance" style="font-size: 24px; font-weight: bold;"></div>
+
+<h3>Add Income/Expense</h3>
+<form id="financeForm" onsubmit="saveEntry(event)">
+  <select id="entryType">
+    <option value="salary">Salary</option>
+    <option value="expense">Expense</option>
+  </select>
+  
+  <input type="number" id="entryAmount" placeholder="Amount" required />
+  
+  <select id="entryCategory">
+    <option value="food">Food</option>
+    <option value="rent">Rent</option>
+    <option value="travel">Travel</option>
+    <option value="shopping">Shopping</option>
+    <option value="others">Others</option>
+  </select>
+  
+  <input type="text" id="entryNote" placeholder="Note" />
+  <button type="submit">Save Entry</button>
+</form>
+
+<h3>🔍 Filter Entries</h3>
+<select id="filterMonth" onchange="fetchEntries()">
+  <option value="">All Months</option>
+  <option value="01">January</option>
+  <option value="02">February</option>
+  <option value="03">March</option>
+  <!-- add more -->
+</select>
+
+<select id="filterCategory" onchange="fetchEntries()">
+  <option value="">All Categories</option>
+  <option value="food">Food</option>
+  <option value="rent">Rent</option>
+  <option value="travel">Travel</option>
+  <option value="shopping">Shopping</option>
+</select>
+
+<h3>📊 Expense Breakdown</h3>
+<canvas id="expenseChart" width="400" height="200"></canvas>
+
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchCurrencies();
+
+      document.getElementById("convertBtn").addEventListener("click", convert);
+    });
+
+    // Fetch currency options from the API
+    async function fetchCurrencies() {
+      try {
+        const response = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await response.json();
+        const currencies = Object.keys(data.rates);
+
+        const fromCurrencySelect = document.getElementById("fromCurrency");
+        const toCurrencySelect = document.getElementById("toCurrency");
+
+        currencies.forEach((currency) => {
+          const option1 = new Option(currency, currency);
+          const option2 = new Option(currency, currency);
+          fromCurrencySelect.add(option1.cloneNode(true));
+          toCurrencySelect.add(option2.cloneNode(true));
+        });
+
+        // Set defaults
+        fromCurrencySelect.value = "USD";
+        toCurrencySelect.value = "INR";
+      } catch (error) {
+        console.error("Currency fetch failed:", error);
+        document.getElementById("error").innerText = "Failed to load currencies.";
+      }
+    }
+
+    // Conversion function
+    async function convert() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const fromCurrency = document.getElementById("fromCurrency").value;
+      const toCurrency = document.getElementById("toCurrency").value;
+
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+
+      if (isNaN(amount) || amount <= 0) {
+        errorDiv.innerText = "Please enter a valid amount.";
+        resultDiv.innerText = "";
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://open.er-api.com/v6/latest/${fromCurrency}`);
+        const data = await response.json();
+
+        if (!data.rates[toCurrency]) {
+          throw new Error("Invalid currency selected.");
+        }
+
+        const convertedAmount = (amount * data.rates[toCurrency]).toFixed(2);
+
+        resultDiv.innerHTML = `${amount} ${fromCurrency} = <strong>${convertedAmount} ${toCurrency}</strong>`;
+        errorDiv.innerHTML = "";
+      } catch (error) {
+        console.error("Conversion error:", error);
+        resultDiv.innerHTML = "";
+        errorDiv.innerHTML = "Error fetching exchange rates. Please try again later.";
+      }
+    }
+  </script>
+</body>
+</html>
