@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finwise Savings Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --danger: #EF4444;
+      --gray-light: #F3F4F6;
+      --gray-dark: #374151;
+      --white: #FFFFFF;
+      --card-shadow: rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--gray-light);
+      padding: 40px;
+      color: var(--gray-dark);
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: var(--white);
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--card-shadow);
+    }
+
+    .tracker {
+      flex: 1 1 350px;
+    }
+
+    .dashboard {
+      flex: 1 1 700px;
+    }
+
+    h2, h3 {
+      margin-bottom: 24px;
+      font-weight: 600;
+      color: var(--gray-dark);
+    }
+
+    label {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .btn-add {
+      background-color: var(--primary);
+      color: var(--white);
+    }
+
+    .btn-reset {
+      background-color: var(--danger);
+      color: var(--white);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background-color: #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0%;
+      background-color: var(--primary);
+      color: white;
+      text-align: center;
+      font-weight: 500;
+      line-height: 24px;
+      transition: width 0.3s ease;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f9fafb;
+      font-weight: 600;
+    }
+
+    #totalSaved {
+      text-align: right;
+      margin-top: 12px;
+      font-weight: 600;
+    }
+
+    canvas {
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card tracker">
+      <h2>Finwise Savings Tracker</h2>
+      <label for="goalName">Goal Name</label>
+      <input type="text" id="goalName" placeholder="e.g., New Laptop">
+      <label for="goal">Set Goal ($)</label>
+      <input type="number" id="goal" placeholder="e.g., 2500">
+      <label for="amount">Add Savings ($)</label>
+      <input type="number" id="amount" placeholder="e.g., 500">
+      <button class="btn-add" onclick="addSaving()">Add to Savings</button>
+      <button class="btn-reset" onclick="resetTracker()">Reset Goal</button>
+      <div id="goalNameDisplay" style="margin-top: 12px; font-weight: 500;"></div>
+      <div class="progress-bar">
+        <div class="progress" id="progressBar">0%</div>
+      </div>
+      <p id="status">Current Savings: $0</p>
+    </div>
+
+    <div class="card dashboard">
+      <h3>Goal Summary</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Goal Name</th>
+            <th>Goal ($)</th>
+            <th>Saved ($)</th>
+          </tr>
+        </thead>
+        <tbody id="goalTableBody"></tbody>
+      </table>
+      <div id="totalSaved">Total Saved: $0</div>
+      <h3>Savings Overview</h3>
+      <canvas id="barChart" height="220"></canvas>
+      <canvas id="donutChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let currentSavings = 0;
+    let totalSavedAcrossGoals = 0;
+    let chartLabels = [], chartSavedData = [], chartGoalData = [];
+    let barChart, donutChart;
+
+    function updateProgressBar() {
+      const goalInput = parseFloat(document.getElementById("goal").value);
+      const progressBar = document.getElementById("progressBar");
+      const percentage = goalInput > 0 ? Math.min((currentSavings / goalInput) * 100, 100) : 0;
+      progressBar.style.width = percentage + "%";
+      progressBar.innerText = Math.floor(percentage) + "%";
+      document.getElementById("status").innerText = `Current Savings: $${currentSavings.toFixed(2)}`;
+    }
+
+    function addSaving() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      if (!amount || amount <= 0) return alert("Enter a valid saving amount.");
+      currentSavings += amount;
+      updateProgressBar();
+    }
+
+    function resetTracker() {
+      const goalName = document.getElementById("goalName").value.trim();
+      const goalAmount = parseFloat(document.getElementById("goal").value);
+
+      if (goalName && !isNaN(goalAmount) && currentSavings > 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${goalName}</td>
+          <td>$${goalAmount.toFixed(2)}</td>
+          <td>$${currentSavings.toFixed(2)}</td>`;
+        document.getElementById("goalTableBody").appendChild(row);
+
+        chartLabels.push(goalName);
+        chartGoalData.push(goalAmount);
+        chartSavedData.push(currentSavings);
+        totalSavedAcrossGoals += currentSavings;
+
+        document.getElementById("totalSaved").innerText = `Total Saved: $${totalSavedAcrossGoals.toFixed(2)}`;
+        updateCharts();
+      }
+
+      currentSavings = 0;
+      document.getElementById("goalName").value = "";
+      document.getElementById("goal").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("goalNameDisplay").innerText = "";
+      updateProgressBar();
+    }
+
+    function updateGoalName() {
+      const name = document.getElementById("goalName").value.trim();
+      document.getElementById("goalNameDisplay").innerText = name ? `Tracking: ${name}` : "";
+    }
+
+    function updateCharts() {
+      if (barChart) barChart.destroy();
+      if (donutChart) donutChart.destroy();
+
+      barChart = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: "Saved",
+              data: chartSavedData,
+              backgroundColor: "#4F46E5"
+            },
+            {
+              label: "Goal",
+              data: chartGoalData,
+              backgroundColor: "#CBD5E1"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      donutChart = new Chart(document.getElementById("donutChart"), {
+        type: "doughnut",
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: "Distribution",
+            data: chartSavedData,
+            backgroundColor: chartLabels.map((_, i) => ["#4F46E5", "#6366F1", "#818CF8", "#A5B4FC", "#E0E7FF"][i % 5])
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
