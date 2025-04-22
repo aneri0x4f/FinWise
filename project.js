@@ -1,13 +1,14 @@
 // project.js
 import { supabase } from './supabase.js';
 
-// Load on page
+let savingsGoal = 0;
+
 document.addEventListener("DOMContentLoaded", () => {
   fetchCurrencies();
   document.getElementById("convertBtn").addEventListener("click", convert);
+  loadSavingsGoal();
 });
 
-// Currency Conversion
 async function fetchCurrencies() {
   try {
     const response = await fetch("https://open.er-api.com/v6/latest/USD");
@@ -52,50 +53,43 @@ async function convert() {
   }
 }
 
-// Auth: Signup
+// Auth
 window.signup = async function () {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-
   const { error } = await supabase.auth.signUp({ email, password });
-  if (error) {
-    document.getElementById("authStatus").innerText = `Signup failed: ${error.message}`;
-  } else {
-    document.getElementById("authStatus").innerText = "Signup successful. Check your email to confirm!";
-  }
+  document.getElementById("authStatus").innerText = error
+    ? `Signup failed: ${error.message}`
+    : "Signup successful. Check email!";
 };
 
-// Auth: Login
 window.login = async function () {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    document.getElementById("authStatus").innerText = `Login failed: ${error.message}`;
-  } else {
-    document.getElementById("authStatus").innerText = "Login successful.";
-    fetchEntries();
-  }
+  document.getElementById("authStatus").innerText = error
+    ? `Login failed: ${error.message}`
+    : "Login successful.";
+  fetchEntries();
+  loadSavingsGoal();
 };
 
-// Auth: Logout
 window.logout = async function () {
   const { error } = await supabase.auth.signOut();
-  if (error) {
-    document.getElementById("authStatus").innerText = `Logout failed: ${error.message}`;
-  } else {
-    document.getElementById("authStatus").innerText = "Logged out.";
-    document.getElementById("entryList").innerHTML = "";
-    document.getElementById("totalBalance").innerText = "$0.00";
-  }
+  document.getElementById("authStatus").innerText = error
+    ? `Logout failed: ${error.message}`
+    : "Logged out.";
+  document.getElementById("entryList").innerHTML = "";
+  document.getElementById("totalBalance").innerText = "$0.00";
+  document.getElementById("progressText").innerText = "No goal set.";
+  document.getElementById("progressBar").style.width = "0%";
 };
 
 // Save Entry
 window.saveEntry = async function (e) {
   e.preventDefault();
   const user = (await supabase.auth.getUser()).data.user;
-  if (!user) return alert("You must be logged in to save entries.");
+  if (!user) return alert("Login required.");
 
   const amount = parseFloat(document.getElementById("entryAmount").value);
   const type = document.getElementById("entryType").value === "salary" ? "income" : "expense";
@@ -110,17 +104,12 @@ window.saveEntry = async function (e) {
     note
   }]);
 
-  if (error) {
-    alert("❌ Failed to save entry.");
-    console.error(error);
-  } else {
-    alert("✅ Entry saved.");
-    document.getElementById("financeForm").reset();
-    fetchEntries();
-  }
+  if (error) return alert("❌ Failed to save entry.");
+
+  document.getElementById("financeForm").reset();
+  fetchEntries();
 };
 
-// Fetch & Render Entries
 window.fetchEntries = async function () {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return;
@@ -132,31 +121,31 @@ window.fetchEntries = async function () {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching entries:", error);
+    console.error("Fetch error:", error);
     return;
   }
 
+  const month = document.getElementById("filterMonth").value;
+  const category = document.getElementById("filterCategory").value;
+
   let entries = data;
 
-  const monthFilter = document.getElementById("filterMonth").value;
-  const categoryFilter = document.getElementById("filterCategory").value;
-
-  if (monthFilter) {
-    entries = entries.filter(entry => {
-      const d = new Date(entry.created_at);
-      return String(d.getMonth() + 1).padStart(2, '0') === monthFilter;
+  if (month) {
+    entries = entries.filter(e => {
+      const d = new Date(e.created_at);
+      return String(d.getMonth() + 1).padStart(2, '0') === month;
     });
   }
 
-  if (categoryFilter) {
-    entries = entries.filter(entry => entry.category === categoryFilter);
+  if (category) {
+    entries = entries.filter(e => e.category === category);
   }
 
   renderEntries(entries);
   calculateBalance(entries);
+  updateSavingsProgress(entries);
 };
 
-// Render entries
 function renderEntries(entries) {
   const container = document.getElementById("entryList");
   container.innerHTML = "";
@@ -174,21 +163,73 @@ function renderEntries(entries) {
       <em>${entry.category}</em> | ${entry.note || "-"}<br>
       <small>${date}</small>
     `;
-    div.style.borderBottom = "1px solid #ccc";
-    div.style.padding = "8px 0";
     container.appendChild(div);
   });
 }
 
-// Calculate total
 function calculateBalance(entries) {
   let total = 0;
   entries.forEach(entry => {
-    if (entry.type === "income") {
-      total += Number(entry.amount);
-    } else {
-      total -= Number(entry.amount);
-    }
+    if (entry.type === "income") total += Number(entry.amount);
+    else total -= Number(entry.amount);
   });
   document.getElementById("totalBalance").innerText = `$${total.toFixed(2)}`;
+}
+
+// Savings Goal: Store to DB
+window.updateSavingsGoal = async function () {
+  const input = document.getElementById("savingsGoal");
+  const user = (await supabase.auth.getUser()).data.user;
+  savingsGoal = parseFloat(input.value);
+
+  if (!user || isNaN(savingsGoal) || savingsGoal <= 0) {
+    document.getElementById("progressText").innerText = "❗ Enter valid goal.";
+    return;
+  }
+
+  await supabase
+    .from("savings_goals")
+    .upsert([{ uid: user.id, goal_amount: savingsGoal }], { onConflict: ['uid'] });
+
+  updateSavingsProgress();
+};
+
+// Savings Goal: Load from DB
+async function loadSavingsGoal() {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from("savings_goals")
+    .select("goal_amount")
+    .eq("uid", user.id)
+    .single();
+
+  if (data?.goal_amount) {
+    savingsGoal = data.goal_amount;
+    document.getElementById("savingsGoal").value = savingsGoal;
+  }
+
+  fetchEntries(); // to ensure we calculate correctly
+}
+
+// Update Progress Bar
+function updateSavingsProgress(entries = []) {
+  if (!savingsGoal) {
+    document.getElementById("progressText").innerText = "Set a savings goal.";
+    document.getElementById("progressBar").style.width = "0%";
+    return;
+  }
+
+  const totalSaved = entries
+    .filter(e => e.category === "savings" && e.type === "expense")
+    .reduce((sum, e) => sum + Number(e.amount), 0);
+
+  const percent = Math.min((totalSaved / savingsGoal) * 100, 100).toFixed(1);
+  document.getElementById("progressBar").style.width = `${percent}%`;
+
+  document.getElementById("progressText").innerText =
+    percent >= 100
+      ? `🎉 Goal reached! Saved $${totalSaved}.`
+      : `💰 Saved $${totalSaved} of $${savingsGoal} (${percent}%)`;
 }
