@@ -98,18 +98,44 @@ window.logout = async function () {
   document.getElementById("progressBar").style.width = "0%";
 };
 
-// 💾 Save Income/Expense
+// Save Entry
+// window.saveEntry = async function (e) {
+//   e.preventDefault();
+//   const user = (await supabase.auth.getUser()).data.user;
+//   if (!user) return alert("Login required.");
+
+//   const amount = parseFloat(document.getElementById("entryAmount").value);
+//   const type = document.getElementById("entryType").value === "salary" ? "income" : "expense";
+//   const category = document.getElementById("entryCategory").value;
+//   const note = document.getElementById("entryNote").value;
+
+//   const { error } = await supabase.from("finance_entries").insert([{
+//     uid: user.id,
+//     type,
+//     amount,
+//     category,
+//     note
+//   }]);
+
+//   if (error) return alert("❌ Failed to save entry.");
+
+//   document.getElementById("financeForm").reset();
+//   fetchEntries();
+// };
 window.saveEntry = async function (e) {
   e.preventDefault();
 
+  // Get the current user from Supabase
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return alert("Login required.");
 
+  // Get the form data
   const amount = parseFloat(document.getElementById("entryAmount").value);
   const type = document.getElementById("entryType").value === "salary" ? "income" : "expense";
   const category = document.getElementById("entryCategory").value;
   const note = document.getElementById("entryNote").value;
 
+  // Save the entry to Supabase
   const { error } = await supabase.from("finance_entries").insert([{
     uid: user.id,
     amount,
@@ -120,11 +146,32 @@ window.saveEntry = async function (e) {
 
   if (error) return alert("❌ Failed to save entry.");
 
+  // Reset the form after successful submission
   document.getElementById("financeForm").reset();
+  
+  // Fetch and display the updated entries
   fetchEntries();
 };
 
-// 📥 Fetch Entries
+// Toggle categories based on the selected entry type
+window.toggleCategories = function () {
+  const entryType = document.getElementById("entryType").value;
+  const categorySection = document.getElementById("categorySection");
+
+  // If 'expense' is selected, show categories. Otherwise, hide them.
+  if (entryType === "expense") {
+    categorySection.style.display = "block";  // Show category section for expenses
+  } else {
+    categorySection.style.display = "none";  // Hide category section for income
+  }
+};
+
+// Initialize toggle on page load to handle the default selection
+document.addEventListener("DOMContentLoaded", function() {
+  toggleCategories();  // Call toggleCategories to handle default state (Income)
+});
+
+
 window.fetchEntries = async function () {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return;
@@ -250,4 +297,4 @@ function updateSavingsProgress(entries = []) {
     percent >= 100
       ? `🎉 Goal reached! Saved $${totalSaved}.`
       : `💰 Saved $${totalSaved} of $${savingsGoal} (${percent}%)`;
-}
+  }

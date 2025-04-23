@@ -114,11 +114,11 @@
     <div id="totalBalance" style="font-size: 24px; font-weight: bold;">$0.00</div>
   </div>
 
-  <div class="section">
+  <!-- <div class="section">
     <h3>Add Income/Expense</h3>
     <form id="financeForm" onsubmit="saveEntry(event)">
       <select id="entryType">
-        <option value="salary">Salary</option>
+        <option value="salary">Income</option>
         <option value="expense">Expense</option>
       </select>
 
@@ -136,7 +136,36 @@
       <input type="text" id="entryNote" placeholder="Note" />
       <button type="submit">Save Entry</button>
     </form>
+  </div> -->
+
+  <div class="section">
+    <h3>Add Income/Expense</h3>
+    <form id="financeForm" onsubmit="saveEntry(event)">
+      <select id="entryType" onchange="toggleCategories()">
+        <option value="salary">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+  
+      <input type="number" id="entryAmount" placeholder="Amount" required />
+  
+      <!-- This div will be shown only when "Expense" is selected -->
+      <div id="categorySection" style="display: none;">
+        <select id="entryCategory">
+          <option value="food">Food</option>
+          <option value="rent">Rent</option>
+          <option value="travel">Travel</option>
+          <option value="shopping">Shopping</option>
+          <option value="savings">Savings</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
+  
+      <input type="text" id="entryNote" placeholder="Note" />
+      <button type="submit">Save Entry</button>
+    </form>
   </div>
+  
+  
 
   <div class="section filter-group">
     <div>
