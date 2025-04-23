@@ -14,12 +14,40 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// Fetch Currencies on Page Load
+// On Page Load
 document.addEventListener("DOMContentLoaded", () => {
+  // Setup Currency Conversion
   fetchCurrencies();
   document.getElementById("convertBtn").addEventListener("click", convert);
+
+  // Setup Progress Bars
+  const amountInput = document.getElementById("amount");
+  const categorySelect = document.getElementById("category");
+  const addBtn = document.getElementById("addBtn");
+  const foodBar = document.getElementById("foodBar");
+  const transportBar = document.getElementById("transportBar");
+
+  addBtn.addEventListener("click", () => {
+    const amount = parseFloat(amountInput.value);
+    const category = categorySelect.value;
+
+    if (!amount || amount <= 0 || category === "") {
+      alert("Please enter a valid amount and select a category.");
+      return;
+    }
+
+    if (category === "food") {
+      foodBar.value = Math.min(parseFloat(foodBar.value) + amount, foodBar.max);
+    } else if (category === "transport") {
+      transportBar.value = Math.min(parseFloat(transportBar.value) + amount, transportBar.max);
+    }
+
+    amountInput.value = "";
+    categorySelect.value = "";
+  });
 });
 
+// Currency Converter Functions
 async function fetchCurrencies() {
   try {
     const response = await fetch("https://open.er-api.com/v6/latest/USD");
@@ -95,7 +123,7 @@ window.logout = async function () {
   }
 };
 
-// Save Entry to Firestore
+// Save Entry to Firestore + Update Progress Bars
 window.saveEntry = async function (e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById("entryAmount").value);
@@ -118,6 +146,15 @@ window.saveEntry = async function (e) {
       note,
       createdAt: serverTimestamp()
     });
+
+    // Update progress bar if category matches
+    if (type === "expense" && (category === "food" || category === "transport")) {
+      const bar = document.getElementById(`${category}Bar`);
+      if (bar) {
+        bar.value = Math.min(parseFloat(bar.value) + amount, bar.max);
+      }
+    }
+
     document.getElementById("financeForm").reset();
     fetchEntries();
   } catch (err) {
@@ -125,7 +162,7 @@ window.saveEntry = async function (e) {
   }
 };
 
-// Fetch + Render Entries
+// Fetch & Filter Entries
 window.fetchEntries = async function () {
   if (!auth.currentUser) return;
 
@@ -138,7 +175,6 @@ window.fetchEntries = async function () {
   let entries = [];
   snapshot.forEach(doc => entries.push({ id: doc.id, ...doc.data() }));
 
-  // Filter by month
   if (filterMonth) {
     entries = entries.filter(entry => {
       const date = entry.createdAt?.toDate?.();
@@ -146,7 +182,6 @@ window.fetchEntries = async function () {
     });
   }
 
-  // Filter by category
   if (filterCategory) {
     entries = entries.filter(entry => entry.category === filterCategory);
   }
@@ -155,7 +190,7 @@ window.fetchEntries = async function () {
   calculateBalance(entries);
 };
 
-// Render Entries to DOM
+// Render Entries
 function renderEntries(entries) {
   const container = document.getElementById("entryList");
   container.innerHTML = "";

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Currency Converter</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h3>👤 User Access</h3>
@@ -22,8 +23,36 @@
     <div id="result"></div>
     <div id="error" style="color:red;"></div>
 
-    <h2>💰 Your Total Balance</h2>
-<div id="totalBalance" style="font-size: 24px; font-weight: bold;"></div>
+    <div class="container">
+      <label for="amount">Enter Amount ($)</label>
+      <input type="number" id="amount" placeholder="e.g. 100" />
+  
+      <label for="category">Select Category</label>
+      <select id="category">
+        <option value="">-- Choose --</option>
+        <option value="food">Food</option>
+        <option value="transport">Transport</option>
+      </select>
+  
+      <button id="addBtn">Add</button>
+  
+      <div class="progress-container">
+        <div class="progress-block">
+          <div class="progress-label">Food</div>
+          <progress id="foodBar" value="0" max="1000"></progress>
+        </div>
+  
+        <div class="progress-block">
+          <div class="progress-label">Transport</div>
+          <progress id="transportBar" value="0" max="1000"></progress>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
 
 <h3>Add Income/Expense</h3>
 <form id="financeForm" onsubmit="saveEntry(event)">
