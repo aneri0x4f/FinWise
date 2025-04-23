@@ -85,11 +85,15 @@
         flex-direction: column;
       }
     }
+
+    #appContent {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-  <div class="section">
+  <div class="section" id="authSection">
     <h3>User Access</h3>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
@@ -99,20 +103,21 @@
     <div id="authStatus"></div>
   </div>
 
-  <div class="section">
-    <h2>Multi-Currency Converter</h2>
-    <input type="number" id="amount" placeholder="Enter amount" />
-    <select id="fromCurrency"></select>
-    <select id="toCurrency"></select>
-    <button id="convertBtn">Convert</button>
-    <div id="result"></div>
-    <div id="error" style="color:red;"></div>
-  </div>
+  <div id="appContent">
+    <div class="section">
+      <h2>Multi-Currency Converter</h2>
+      <input type="number" id="amount" placeholder="Enter amount" />
+      <select id="fromCurrency"></select>
+      <select id="toCurrency"></select>
+      <button id="convertBtn">Convert</button>
+      <div id="result"></div>
+      <div id="error" style="color:red;"></div>
+    </div>
 
-  <div class="section">
-    <h2>Your Total Balance</h2>
-    <div id="totalBalance" style="font-size: 24px; font-weight: bold;">$0.00</div>
-  </div>
+    <div class="section">
+      <h2>Your Total Balance</h2>
+      <div id="totalBalance" style="font-size: 24px; font-weight: bold;">$0.00</div>
+    </div>
 
   <!-- <div class="section">
     <h3>Add Income/Expense</h3>
@@ -122,7 +127,7 @@
         <option value="expense">Expense</option>
       </select>
 
-      <input type="number" id="entryAmount" placeholder="Amount" required />
+        <input type="number" id="entryAmount" placeholder="Amount" required />
 
       <select id="entryCategory">
         <option value="food">Food</option>
@@ -167,54 +172,55 @@
   
   
 
-  <div class="section filter-group">
-    <div>
-      <label>Filter by Month:</label>
-      <select id="filterMonth" onchange="fetchEntries()">
-        <option value="">All Months</option>
-        <option value="01">January</option>
-        <option value="02">February</option>
-        <option value="03">March</option>
-        <option value="04">April</option>
-        <option value="05">May</option>
-        <option value="06">June</option>
-        <option value="07">July</option>
-        <option value="08">August</option>
-        <option value="09">September</option>
-        <option value="10">October</option>
-        <option value="11">November</option>
-        <option value="12">December</option>
-      </select>
+    <div class="section filter-group">
+      <div>
+        <label>Filter by Month:</label>
+        <select id="filterMonth" onchange="fetchEntries()">
+          <option value="">All Months</option>
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Filter by Category:</label>
+        <select id="filterCategory" onchange="fetchEntries()">
+          <option value="">All Categories</option>
+          <option value="food">Food</option>
+          <option value="rent">Rent</option>
+          <option value="travel">Travel</option>
+          <option value="shopping">Shopping</option>
+          <option value="savings">Savings</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
     </div>
 
-    <div>
-      <label>Filter by Category:</label>
-      <select id="filterCategory" onchange="fetchEntries()">
-        <option value="">All Categories</option>
-        <option value="food">Food</option>
-        <option value="rent">Rent</option>
-        <option value="travel">Travel</option>
-        <option value="shopping">Shopping</option>
-        <option value="savings">Savings</option>
-        <option value="others">Others</option>
-      </select>
+    <div class="section">
+      <h3>Saved Entries</h3>
+      <div id="entryList"></div>
     </div>
-  </div>
 
-  <div class="section">
-    <h3>Saved Entries</h3>
-    <div id="entryList"></div>
-  </div>
+    <div class="section">
+      <h3>Savings Goal Tracker</h3>
+      <input type="number" id="savingsGoal" placeholder="e.g. 2000" />
+      <button onclick="updateSavingsGoal()">Set Goal</button>
 
-  <div class="section">
-    <h3>Savings Goal Tracker</h3>
-    <input type="number" id="savingsGoal" placeholder="e.g. 2000" />
-    <button onclick="updateSavingsGoal()">Set Goal</button>
-
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <p id="progressText" class="goal-status">No goal set.</p>
     </div>
-    <p id="progressText" class="goal-status">No goal set.</p>
   </div>
 
   <script type="module" src="./supabase.js"></script>
