@@ -1,8 +1,8 @@
-// project.js
 import { supabase } from './supabase.js';
 
 let savingsGoal = 0;
 
+// Run on page load
 document.addEventListener("DOMContentLoaded", () => {
   fetchCurrencies();
   document.getElementById("convertBtn").addEventListener("click", convert);
@@ -53,41 +53,55 @@ async function convert() {
   }
 }
 
-// Auth
+// 🔐 Supabase Auth: Signup
 window.signup = async function () {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-  const { error } = await supabase.auth.signUp({ email, password });
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      redirectTo: 'http://127.0.0.1:8080/project.html' // live-server redirect
+    }
+  });
+
   document.getElementById("authStatus").innerText = error
     ? `Signup failed: ${error.message}`
-    : "Signup successful. Check email!";
+    : "Signup successful. Check your email to confirm!";
 };
 
+// 🔓 Supabase Auth: Login
 window.login = async function () {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
+
   document.getElementById("authStatus").innerText = error
     ? `Login failed: ${error.message}`
     : "Login successful.";
+
   fetchEntries();
   loadSavingsGoal();
 };
 
+// 🔒 Logout
 window.logout = async function () {
   const { error } = await supabase.auth.signOut();
   document.getElementById("authStatus").innerText = error
     ? `Logout failed: ${error.message}`
     : "Logged out.";
+
   document.getElementById("entryList").innerHTML = "";
   document.getElementById("totalBalance").innerText = "$0.00";
   document.getElementById("progressText").innerText = "No goal set.";
   document.getElementById("progressBar").style.width = "0%";
 };
 
-// Save Entry
+// 💾 Save Income/Expense
 window.saveEntry = async function (e) {
   e.preventDefault();
+
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return alert("Login required.");
 
@@ -98,8 +112,8 @@ window.saveEntry = async function (e) {
 
   const { error } = await supabase.from("finance_entries").insert([{
     uid: user.id,
-    type,
     amount,
+    type,
     category,
     note
   }]);
@@ -110,6 +124,7 @@ window.saveEntry = async function (e) {
   fetchEntries();
 };
 
+// 📥 Fetch Entries
 window.fetchEntries = async function () {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return;
@@ -146,6 +161,7 @@ window.fetchEntries = async function () {
   updateSavingsProgress(entries);
 };
 
+// 🖼️ Render Entries
 function renderEntries(entries) {
   const container = document.getElementById("entryList");
   container.innerHTML = "";
@@ -163,10 +179,12 @@ function renderEntries(entries) {
       <em>${entry.category}</em> | ${entry.note || "-"}<br>
       <small>${date}</small>
     `;
+    div.classList.add("entry-card");
     container.appendChild(div);
   });
 }
 
+// 💰 Calculate Total Balance
 function calculateBalance(entries) {
   let total = 0;
   entries.forEach(entry => {
@@ -176,7 +194,7 @@ function calculateBalance(entries) {
   document.getElementById("totalBalance").innerText = `$${total.toFixed(2)}`;
 }
 
-// Savings Goal: Store to DB
+// 🎯 Update Goal
 window.updateSavingsGoal = async function () {
   const input = document.getElementById("savingsGoal");
   const user = (await supabase.auth.getUser()).data.user;
@@ -194,12 +212,12 @@ window.updateSavingsGoal = async function () {
   updateSavingsProgress();
 };
 
-// Savings Goal: Load from DB
+// 🔁 Load Goal on Login
 async function loadSavingsGoal() {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return;
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("savings_goals")
     .select("goal_amount")
     .eq("uid", user.id)
@@ -210,10 +228,10 @@ async function loadSavingsGoal() {
     document.getElementById("savingsGoal").value = savingsGoal;
   }
 
-  fetchEntries(); // to ensure we calculate correctly
+  fetchEntries(); // also refresh view
 }
 
-// Update Progress Bar
+// 📊 Update Progress Bar
 function updateSavingsProgress(entries = []) {
   if (!savingsGoal) {
     document.getElementById("progressText").innerText = "Set a savings goal.";
