@@ -5,6 +5,7 @@
   <title>FinWise — Budget Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* (CSS unchanged — keeping your current styles) */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f9f9f9;
@@ -97,9 +98,9 @@
     <h3>User Access</h3>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <button onclick="signup()">Signup</button>
-    <button onclick="logout()">Logout</button>
+    <button id="loginBtn">Login</button>
+    <button id="signupBtn">Signup</button>
+    <button id="logoutBtn">Logout</button>
     <div id="authStatus"></div>
   </div>
 
@@ -119,63 +120,36 @@
       <div id="totalBalance" style="font-size: 24px; font-weight: bold;">$0.00</div>
     </div>
 
-  <!-- <div class="section">
-    <h3>Add Income/Expense</h3>
-    <form id="financeForm" onsubmit="saveEntry(event)">
-      <select id="entryType">
-        <option value="salary">Income</option>
-        <option value="expense">Expense</option>
-      </select>
+    <div class="section">
+      <h3>Add Income/Expense</h3>
+      <form id="financeForm">
+        <select id="entryType">
+          <option value="salary">Income</option>
+          <option value="expense">Expense</option>
+        </select>
 
         <input type="number" id="entryAmount" placeholder="Amount" required />
 
-      <select id="entryCategory">
-        <option value="food">Food</option>
-        <option value="rent">Rent</option>
-        <option value="travel">Travel</option>
-        <option value="shopping">Shopping</option>
-        <option value="savings">Savings</option>
-        <option value="others">Others</option>
-      </select>
+        <div id="categorySection" style="display: none;">
+          <select id="entryCategory">
+            <option value="food">Food</option>
+            <option value="rent">Rent</option>
+            <option value="travel">Travel</option>
+            <option value="shopping">Shopping</option>
+            <option value="savings">Savings</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
 
-      <input type="text" id="entryNote" placeholder="Note" />
-      <button type="submit">Save Entry</button>
-    </form>
-  </div> -->
-
-  <div class="section">
-    <h3>Add Income/Expense</h3>
-    <form id="financeForm" onsubmit="saveEntry(event)">
-      <select id="entryType" onchange="toggleCategories()">
-        <option value="salary">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-  
-      <input type="number" id="entryAmount" placeholder="Amount" required />
-  
-      <!-- This div will be shown only when "Expense" is selected -->
-      <div id="categorySection" style="display: none;">
-        <select id="entryCategory">
-          <option value="food">Food</option>
-          <option value="rent">Rent</option>
-          <option value="travel">Travel</option>
-          <option value="shopping">Shopping</option>
-          <option value="savings">Savings</option>
-          <option value="others">Others</option>
-        </select>
-      </div>
-  
-      <input type="text" id="entryNote" placeholder="Note" />
-      <button type="submit">Save Entry</button>
-    </form>
-  </div>
-  
-  
+        <input type="text" id="entryNote" placeholder="Note" />
+        <button type="submit">Save Entry</button>
+      </form>
+    </div>
 
     <div class="section filter-group">
       <div>
         <label>Filter by Month:</label>
-        <select id="filterMonth" onchange="fetchEntries()">
+        <select id="filterMonth">
           <option value="">All Months</option>
           <option value="01">January</option>
           <option value="02">February</option>
@@ -194,7 +168,7 @@
 
       <div>
         <label>Filter by Category:</label>
-        <select id="filterCategory" onchange="fetchEntries()">
+        <select id="filterCategory">
           <option value="">All Categories</option>
           <option value="food">Food</option>
           <option value="rent">Rent</option>
@@ -214,7 +188,7 @@
     <div class="section">
       <h3>Savings Goal Tracker</h3>
       <input type="number" id="savingsGoal" placeholder="e.g. 2000" />
-      <button onclick="updateSavingsGoal()">Set Goal</button>
+      <button id="goalBtn">Set Goal</button>
 
       <div class="progress-container">
         <div class="progress-bar" id="progressBar"></div>
@@ -223,7 +197,9 @@
     </div>
   </div>
 
-  <script type="module" src="./supabase.js"></script>
+  <!-- Modules (auth.js, entries.js, etc. should be imported via main.js) -->
   <script type="module" src="./project.js"></script>
+  <script type="module" src="./main.js"></script>
+
 </body>
 </html>
