@@ -1,35 +1,34 @@
 import { signup, login, logout } from './auth.js';
 import { fetchCurrencies, convert } from './currency.js';
 import { saveEntry, fetchEntries, toggleCategories } from './entries.js';
-import { updateSavingsGoal, loadSavingsGoal } from './goal.js';
+import { updateSavingsGoal, loadSavingsGoal, resetAllData } from './goal.js';
 
-// Initialize app when page loads
+// ✅ App initialization
 document.addEventListener("DOMContentLoaded", () => {
-  fetchCurrencies();            // Populate currency dropdowns
-  loadSavingsGoal();           // Load savings goal
-  fetchEntries();              // Load entries on page load (if user is already logged in)
-
-  // Auth buttons
+  fetchCurrencies();                // Load currency options
+  loadSavingsGoal();               // Load saved goal
+  document.getElementById("convertBtn").addEventListener("click", convert);
   document.getElementById("loginBtn").addEventListener("click", login);
   document.getElementById("signupBtn").addEventListener("click", signup);
   document.getElementById("logoutBtn").addEventListener("click", logout);
-
-  // Currency conversion
-  document.getElementById("convertBtn").addEventListener("click", convert);
-
-  // Entry form interactions
   document.getElementById("financeForm").addEventListener("submit", saveEntry);
-  document.getElementById("entryType").addEventListener("change", toggleCategories);
-
-  // Savings goal button
   document.getElementById("goalBtn").addEventListener("click", updateSavingsGoal);
 
-  // Filter dropdowns
-  document.getElementById("filterMonth").addEventListener("change", fetchEntries);
-  document.getElementById("filterCategory").addEventListener("change", fetchEntries);
+  const resetBtn = document.getElementById("resetBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetAllData);  // 🔁 Attach reset logic
+  }
+
+  const typeSelect = document.getElementById("entryType");
+  if (typeSelect) {
+    typeSelect.addEventListener("change", toggleCategories);  // Toggle expense category
+  }
+
+  // Initial load
+  fetchEntries();
 });
 
-// Attach all functions to window for manual testing/debugging if needed
+// 🔁 Export for testing/debug if needed
 window.signup = signup;
 window.login = login;
 window.logout = logout;
@@ -40,3 +39,4 @@ window.fetchEntries = fetchEntries;
 window.toggleCategories = toggleCategories;
 window.updateSavingsGoal = updateSavingsGoal;
 window.loadSavingsGoal = loadSavingsGoal;
+window.resetAllData = resetAllData;

@@ -1,6 +1,11 @@
 import { supabase } from './supabase.js';
 import { updateSavingsProgress } from './goal.js';
 
+let allEntries = [];
+let currentIndex = 0;
+const BATCH_SIZE = 10;
+
+// Save Entry
 export async function saveEntry(e) {
   e.preventDefault();
   const user = (await supabase.auth.getUser()).data.user;
@@ -11,17 +16,17 @@ export async function saveEntry(e) {
   const category = document.getElementById("entryCategory").value;
   const note = document.getElementById("entryNote").value;
 
-  const { error } = await supabase.from("finance_entries").insert([{
-    uid: user.id, amount, type, category, note
-  }]);
+  const { error } = await supabase.from("finance_entries").insert([
+    { uid: user.id, amount, type, category, note }
+  ]);
 
   if (error) return alert("❌ Failed to save entry.");
-
   document.getElementById("financeForm").reset();
-  fetchEntries();
+  await fetchEntries(true);  // true = reset list
 }
 
-export async function fetchEntries() {
+// Fetch All Entries Once
+export async function fetchEntries(reset = false) {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return;
 
@@ -38,43 +43,54 @@ export async function fetchEntries() {
 
   const month = document.getElementById("filterMonth").value;
   const category = document.getElementById("filterCategory").value;
-  let entries = data;
+  allEntries = data;
 
   if (month) {
-    entries = entries.filter(e => new Date(e.created_at).getMonth() + 1 === parseInt(month));
+    allEntries = allEntries.filter(e =>
+      String(new Date(e.created_at).getMonth() + 1).padStart(2, '0') === month
+    );
   }
 
   if (category) {
-    entries = entries.filter(e => e.category === category);
+    allEntries = allEntries.filter(e => e.category === category);
   }
 
-  renderEntries(entries);
-  calculateBalance(entries);
-  updateSavingsProgress(entries);
+  currentIndex = 0;
+  if (reset) document.getElementById("entryList").innerHTML = "";
+  loadMoreEntries();
+
+  calculateBalance(allEntries);
+  updateSavingsProgress(allEntries);
 }
 
-function renderEntries(entries) {
+// Load next batch
+function loadMoreEntries() {
   const container = document.getElementById("entryList");
-  container.innerHTML = "";
-
-  if (entries.length === 0) {
-    container.innerHTML = "<p>No entries found.</p>";
-    return;
-  }
-
-  entries.forEach(entry => {
-    const date = new Date(entry.created_at).toLocaleDateString();
+  const slice = allEntries.slice(currentIndex, currentIndex + BATCH_SIZE);
+  slice.forEach(entry => {
     const div = document.createElement("div");
+    div.classList.add("entry-card");
     div.innerHTML = `
       <strong>${entry.type.toUpperCase()}</strong> — $${entry.amount}<br>
       <em>${entry.category}</em> | ${entry.note || "-"}<br>
-      <small>${date}</small>
+      <small>${new Date(entry.created_at).toLocaleDateString()}</small>
     `;
-    div.classList.add("entry-card");
     container.appendChild(div);
   });
+  currentIndex += BATCH_SIZE;
 }
 
+// Detect scroll bottom
+document.addEventListener("DOMContentLoaded", () => {
+  const entryList = document.getElementById("entryList");
+  entryList.addEventListener("scroll", () => {
+    if (entryList.scrollTop + entryList.clientHeight >= entryList.scrollHeight - 10) {
+      loadMoreEntries();
+    }
+  });
+});
+
+// Calculate balance
 function calculateBalance(entries) {
   let total = 0;
   entries.forEach(entry => {
